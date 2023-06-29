@@ -9,6 +9,7 @@ import { GetStaticProps } from "next";
 
 import Stripe from "stripe";
 import Link from "next/link";
+import Head from "next/head";
 
 interface HomeProps {
   products: {
@@ -28,10 +29,15 @@ export default function Home({ products }: HomeProps) {
   })
 
   return (
-    <HomeContainer ref={sliderRef} className="keen-slider">
-      {products.map((product) => {
-        return (
-          <Product href={`/product/${product.id}`} className="keen-slider__slide" key={product.id}>
+    <>
+      <Head>
+        <title>Home | Ignite Shop</title>
+      </Head>
+
+      <HomeContainer ref={sliderRef} className="keen-slider">
+        {products.map((product) => {
+          return (
+            <Product href={`/product/${product.id}`} className="keen-slider__slide" key={product.id} prefetch={false} /* Não ira fazer prefetch sempre que atualizar a pagina, apenas quando der um hover  */>
               <Image src={product.imageUrl} width={520} height={480} alt="" />
 
               <footer>
@@ -39,10 +45,11 @@ export default function Home({ products }: HomeProps) {
 
                 <span>{product.price}</span>
               </footer>
-          </Product>
-        )
-      })}
-    </HomeContainer>
+            </Product>
+          )
+        })}
+      </HomeContainer>
+    </>
   )
 }
 

@@ -1,8 +1,11 @@
 import { stripe } from "@/lib/stripe"
 import { ImageContainer, ProductContainer, ProductDetails } from "@/styles/pages/product"
-import { GetStaticProps } from "next"
+import axios from "axios"
+import { GetStaticPaths, GetStaticProps } from "next"
+import Head from "next/head"
 import Image from "next/image"
 import { useRouter } from "next/router"
+import { useState } from "react"
 import Stripe from "stripe"
 
 interface ProductProps {
@@ -12,34 +15,73 @@ interface ProductProps {
         imageUrl: string,
         price: string,
         description: string,
+        defaultPriceId: string
     }
 }
 
 export default function Product({ product }: ProductProps) {
-    const { query } = useRouter()
+    const [isCreatingCheckoutSession, setIsCreatingCheckoutSession] = useState(false)
+    const { isFallback } = useRouter()
+
+    if (isFallback) {
+        return <p>Loading...</p>
+    }
+
+    const handleBuyProduct = async () => {
+        try {
+            setIsCreatingCheckoutSession(true)
+            const response = await axios.post('/api/checkout', {
+                priceId: product.defaultPriceId
+            })
+
+            const { checkoutUrl } = response.data
+
+            window.location.href = checkoutUrl
+        } catch (err) {
+            setIsCreatingCheckoutSession(false)
+            alert('Falha ao conectar ao checkout')
+        }
+    }
     return (
-        <ProductContainer>
-            <ImageContainer>
-                <Image src={product.imageUrl} width={520} height={480}/>
-            </ImageContainer>
+        <>
+            <Head>
+                <title>{product.name} | Ignite Shop</title>
+            </Head>
+            <ProductContainer>
+                <ImageContainer>
+                    <Image src={product.imageUrl} width={520} height={480} alt="" />
+                </ImageContainer>
 
-            <ProductDetails>
-                <h1>{product.name}</h1>
-                <span>{product.price}</span>
+                <ProductDetails>
+                    <h1>{product.name}</h1>
+                    <span>{product.price}</span>
 
-                <p>{product.description}</p>
+                    <p>{product.description}</p>
 
-                <button>
-                    Comprar agora
-                </button>
-            </ProductDetails>
-        </ProductContainer>
+                    <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>
+                        Comprar agora
+                    </button>
+                </ProductDetails>
+            </ProductContainer>
+        </>
     )
 }
 
-
+export const getStaticPaths: GetStaticPaths = async () => {
+    return {
+        paths: [ // tudo que passamos aqui dentro será criado estáticamente no momento do build
+            { params: { id: 'prod_Nuell5yZWbSjwp' } }
+        ],
+        fallback: 'blocking' // ou fallback: 'blocking' para esperar o carregamento completo do servidor
+    }
+}
 
 export const getStaticProps: GetStaticProps<any, { id: string }> = async ({ params }) => {
+    if (!params) {
+        return {
+            notFound: true // Caso não exista parametros, retorna um 404
+        }
+    }
     const productId = params?.id
 
     const product = await stripe.products.retrieve(productId, {
@@ -58,7 +100,8 @@ export const getStaticProps: GetStaticProps<any, { id: string }> = async ({ para
                     style: 'currency',
                     currency: 'BRL'
                 }).format(price.unit_amount! / 100),
-                product: product.description
+                description: product.description,
+                defaultPriceId: price.id
             }
         },
         revalidate: 60 * 60 * 1 // 1 hour on cache!
