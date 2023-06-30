@@ -10,6 +10,8 @@ import { GetStaticProps } from "next";
 import Stripe from "stripe";
 import Link from "next/link";
 import Head from "next/head";
+import { useEffect, useState } from "react";
+import Skeleton from "react-loading-skeleton";
 
 interface HomeProps {
   products: {
@@ -21,6 +23,13 @@ interface HomeProps {
 }
 
 export default function Home({ products }: HomeProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  // Resto do código...
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
+
   const [sliderRef] = useKeenSlider({
     slides: {
       perView: 3,
@@ -35,19 +44,26 @@ export default function Home({ products }: HomeProps) {
       </Head>
 
       <HomeContainer ref={sliderRef} className="keen-slider">
-        {products.map((product) => {
-          return (
-            <Product href={`/product/${product.id}`} className="keen-slider__slide" key={product.id} prefetch={false} /* Não ira fazer prefetch sempre que atualizar a pagina, apenas quando der um hover  */>
-              <Image src={product.imageUrl} width={520} height={480} alt="" />
+        {isLoading ?
+          <h1><Skeleton /></h1>
+          :
+          <>
+            {products.map((product) => {
+              return (
+                <Product href={`/product/${product.id}`} className="keen-slider__slide" key={product.id} prefetch={false} /* Não ira fazer prefetch sempre que atualizar a pagina, apenas quando der um hover  */>
+                  <Image src={product.imageUrl} width={520} height={480} alt="" />
 
-              <footer>
-                <strong>{product.name}</strong>
+                  <footer>
+                    <strong>{product.name}</strong>
 
-                <span>{product.price}</span>
-              </footer>
-            </Product>
-          )
-        })}
+                    <span>{product.price}</span>
+                  </footer>
+                </Product>
+              )
+            })}
+          </>
+        }
+
       </HomeContainer>
     </>
   )

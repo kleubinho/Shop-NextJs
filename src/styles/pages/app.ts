@@ -13,4 +13,15 @@ export const Header = styled("header", {
   width: "100%",
   maxWidth: 1100,
   margin: "0 auto",
+  
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center'
 });
+
+export const BagHand = styled("div", {
+  backgroundColor: '#202024',
+  padding: 8,
+  lineHeight: 0,
+  borderRadius: '.475rem',
+})
